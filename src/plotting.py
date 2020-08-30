@@ -43,14 +43,15 @@ def plotting(csv, column, sensor, roll=None):
 
 
 def corr_plot(csv):
+    half = np.triu(csv.corr())
     fig, ax = plt.subplots(figsize=(7, 3))
     plt.tick_params(axis='both', which='major', labelsize=7.5)
-    sns.heatmap(csv.corr(), vmin=-1, vmax=1, cmap="coolwarm", linewidths=0.5, annot=True, ax=ax)
+    sns.heatmap(csv.corr(), vmin=-1, vmax=1, cmap="coolwarm", linewidths=0.5, annot=True, ax=ax, mask=half)
     return fig
 
 
 def plot_estimations(pred, real):
-    fig, axs = plt.subplots(nrows=1, ncols=1, squeeze=True, figsize=(18, 10))
+    fig, axs = plt.subplots(nrows=1, ncols=1, squeeze=True, figsize=(15, 8))
     axs.plot(real, 'b-', label='Real Humidity')
     axs.plot(pred, 'r-', label='Estimated Humidity')
     axs.set_xlabel('Time point', fontsize=17)
@@ -58,6 +59,38 @@ def plot_estimations(pred, real):
     axs.legend(loc='best', fontsize=17)
     axs.tick_params(axis='both', which='major', labelsize=17)
     axs.grid()
+    return fig
+
+
+def scatter_plotting(column_x, column_y, x_label, y_label):
+    fig, ax = plt.subplots(figsize=(9, 5))
+    ax.scatter(x=column_x[::5], y=column_y[::5], alpha=0.7)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.grid()
+    return fig
+
+
+def residual_error_plot(pred, real):
+    residuals = real - pred
+    fig, axs = plt.subplots(nrows=2, ncols=1, squeeze=True, figsize=(15, 25))
+    axs[0].scatter(x=pred[::10], y=residuals[::10], color='g', alpha=0.7)
+    axs[0].axhline(y=0, linestyle='--', color='black', linewidth=3.5)
+    axs[0].set_xlabel('Estimations', fontsize=17)
+    axs[0].set_ylabel('Residuals', fontsize=17)
+    axs[0].set_title('Estimation residuals\n (Every 10th data point for visibility)', fontsize=18)
+    axs[0].tick_params(axis='both', which='major', labelsize=17)
+    axs[0].grid()
+    axs[1].scatter(x=pred[::10], y=real[::10], c='orange', alpha=0.7)
+    axs[1].plot([0, 1], [0, 1], transform=axs[1].transAxes, ls="--", c=".1", linewidth=3, label='Best fit')
+    axs[1].set_xlabel('Estimations', fontsize=17)
+    axs[1].set_ylabel('Real values', fontsize=17)
+    axs[1].set_title('Estimation error\n (Every 10th data point for visibility)', fontsize=18)
+    axs[1].tick_params(axis='both', which='major', labelsize=17)
+    axs[1].set_xlim(9, 31)
+    axs[1].set_ylim(9, 31)
+    axs[1].grid()
+    axs[1].legend(loc='best', fontsize=17)
     return fig
 
 
