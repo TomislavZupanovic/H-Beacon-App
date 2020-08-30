@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 from .process import time_parse
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 data1_path = 'src/data/Data1.csv'
 data2_path = 'src/data/Data2.csv'
@@ -54,3 +55,11 @@ def estimate(model, x, y, scaler, model_type):
     prediction = prediction[:, -1]
     real_values = real_values[:, -1]
     return prediction, real_values
+
+
+def rmse(real, pred):
+    return np.sqrt(mean_squared_error(real, pred))
+
+
+def mae(real, pred):
+    return mean_absolute_error(real, pred)
