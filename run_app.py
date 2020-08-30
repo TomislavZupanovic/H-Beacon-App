@@ -2,7 +2,7 @@ from tensorflow.keras import models
 import streamlit as st
 from src.plotting import *
 from src.utilities import *
-from src.process import *
+from src.process import process_data_model, rolling_before_model
 
 save_dir_nn = 'saved_models/NN_128_64.h5'
 save_dir_lstm = 'saved_models/LSTM_step6_1_12.h5'
@@ -33,12 +33,15 @@ def main():
 def explore_data():
     st.subheader('Explore data')
     data_load_state = st.text('Loading data...')
-    data1, data2, data3 = load_data()
-    data_load_state.text('Loading data...done!')
+    try:
+        data1, data2, data3 = load_data()
+        data_load_state.text('Loading data...done!')
+    except OSError:
+        data_load_state.text('Error loading data...')
     show_data = st.button('Show dataframe')
     if show_data:
         st.text('Samples of sensor 1:')
-        st.dataframe(data1.head(20))
+        st.dataframe(data1.head(10))
     st.subheader('Soil humidity')
     plot_type = st.checkbox('Interactive plot (Note: takes a while to load)')
     if plot_type:
@@ -56,19 +59,26 @@ def explore_data():
     else:
         data_to_plot = data3
     if rolling_check:
-        roll_step = st.slider('Moving Average step', min_value=1, max_value=300)
+        roll_step = st.slider('Moving Average step (140 roughly represents 1 day)', min_value=1, max_value=300)
     else:
         roll_step = None
-    time_chunk = st.slider("Time slice", min_value=data_to_plot.index.to_pydatetime()[0],
+    time_chunk = st.slider("Time frame", min_value=data_to_plot.index.to_pydatetime()[0],
                            max_value=data_to_plot.index.to_pydatetime()[-1],
                            value=(data_to_plot.index.to_pydatetime()[0], data_to_plot.index.to_pydatetime()[-1]),
                            format='YY/MM/DD')
     lower, upper = time_chunk
-    st.pyplot(plotting(data_to_plot.loc[lower.strftime('%Y-%m-%d'): upper.strftime('%Y-%m-%d')],
-                       column, sensor_plot, roll_step))
-    corr = st.checkbox('Correlation Matrix')
+    time_frame_data = data_to_plot.loc[lower.strftime('%Y-%m-%d'): upper.strftime('%Y-%m-%d')]
+    st.pyplot(plotting(time_frame_data, column, sensor_plot, roll_step))
+    st.text('Descriptive statistics (selected time frame)')
+    st.dataframe(time_frame_data.describe())
+    corr = st.checkbox('Correlation matrix (selected time frame)')
     if corr:
-        st.pyplot(corr_plot(data_to_plot))
+        st.pyplot(corr_plot(time_frame_data))
+    scatter_plot = st.checkbox('Scatter plotting (selected time frame)')
+    if scatter_plot:
+        column_x = st.selectbox('X axis feature', time_frame_data.columns, format_func=col_names.get)
+        column_y = st.selectbox('Y axis feature', time_frame_data.columns, format_func=col_names.get)
+        st.pyplot(scatter_plotting(time_frame_data[column_x], time_frame_data[column_y], column_x, column_y))
     st.subheader("Further soil humidity analysis")
     show_analysis = st.button('Show')
     if show_analysis:
@@ -94,13 +104,19 @@ def use_model():
     data_load.text('Loading data...done!')
     model_choose = st.selectbox("Choose trained Model", ['Neural Network', 'LSTM'])
     if model_choose == 'Neural Network':
-        model = models.load_model(save_dir_nn)
-        st.text('Loaded Neural Network Model!')
+        try:
+            model = models.load_model(save_dir_nn)
+            st.text('Loaded Neural Network Model!')
+        except RuntimeError:
+            st.text('Error while loading model')
     elif model_choose == 'LSTM':
-        model = models.load_model(save_dir_lstm)
-        st.text('Loaded LSTM Model!')
+        try:
+            model = models.load_model(save_dir_lstm)
+            st.text('Loaded LSTM Model!')
+        except RuntimeError:
+            st.text('Error while loading model')
     st.text('Note: Models only work on sensor 1 at this moment.')
-    time_to_estimate = st.slider("Time slice on which to estimate", min_value=data1.index.to_pydatetime()[0],
+    time_to_estimate = st.slider("Time frame on which to estimate", min_value=data1.index.to_pydatetime()[0],
                                  max_value=data1.index.to_pydatetime()[-1],
                                  value=(data1.index.to_pydatetime()[0], data1.index.to_pydatetime()[-1]),
                                  format='YY/MM/DD')
@@ -110,6 +126,9 @@ def use_model():
     x, y, scaler = process_data_model(data_for_model, data_to_estimate, model_choose)
     prediction, real_value = estimate(model, x, y, scaler, model_choose)
     st.pyplot(plot_estimations(prediction, real_value))
+    st.write('Metrics on selected time frame:')
+    st.text('RMSE: {:.3f}\nMAE: {:.3f}'.format(rmse(real_value, prediction), mae(real_value, prediction)))
+    st.pyplot(residual_error_plot(prediction, real_value))
 
 
 if __name__ == "__main__":
