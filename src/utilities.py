@@ -46,7 +46,7 @@ def estimate(model, x, y, scaler, model_type):
     pred = model.predict(x)
     pred = pred.reshape(-1, 1)
     y = y.reshape(-1, 1)
-    if model_type == 'LSTM':
+    if model_type == 'LSTM' or model_type == 'TCN':
         x = x[:, 0, :]
     pred = np.concatenate((x, pred), axis=1)
     real = np.concatenate((x, y), axis=1)
