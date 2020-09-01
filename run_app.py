@@ -1,11 +1,14 @@
 from tensorflow.keras import models
+from tensorflow.keras.models import model_from_json
 import streamlit as st
 from src.plotting import *
 from src.utilities import *
 from src.process import process_data_model, rolling_before_model
+from tcn import TCN
 
 save_dir_nn = 'saved_models/NN_128_64.h5'
 save_dir_lstm = 'saved_models/LSTM_step6_1_12.h5'
+save_dir_tcn = 'saved_models/TCN.h5'
 
 col_names = {
     'pressure': 'Pressure',
@@ -31,7 +34,7 @@ def main():
 
 
 def explore_data():
-    st.subheader('Explore data')
+    st.header('Explore data')
     data_load_state = st.text('Loading data...')
     try:
         data1, data2, data3 = load_data()
@@ -78,7 +81,13 @@ def explore_data():
     if scatter_plot:
         column_x = st.selectbox('X axis feature', time_frame_data.columns, format_func=col_names.get)
         column_y = st.selectbox('Y axis feature', time_frame_data.columns, format_func=col_names.get)
-        st.pyplot(scatter_plotting(time_frame_data[column_x], time_frame_data[column_y], column_x, column_y))
+        distr = st.checkbox('Plot distributions')
+        st.pyplot(scatter_plotting(time_frame_data[column_x], time_frame_data[column_y],
+                                   column_x, column_y, distr=distr))
+    histogram = st.checkbox('Histograms (selected time frame)')
+    if histogram:
+        col = st.selectbox('Select feature', time_frame_data.columns, format_func=col_names.get)
+        st.pyplot(histogram_plot(time_frame_data, col))
     st.subheader("Further soil humidity analysis")
     show_analysis = st.button('Show')
     if show_analysis:
@@ -98,11 +107,11 @@ def explore_data():
 
 
 def use_model():
-    st.subheader('Use the Model')
+    st.header('Use the Model')
     data_load = st.text('Loading data...')
     data1, data2, data3 = load_data()
     data_load.text('Loading data...done!')
-    model_choose = st.selectbox("Choose trained Model", ['Neural Network', 'LSTM'])
+    model_choose = st.selectbox("Choose trained Model", ['Neural Network', 'LSTM', 'TCN'])
     if model_choose == 'Neural Network':
         try:
             model = models.load_model(save_dir_nn)
@@ -115,6 +124,17 @@ def use_model():
             st.text('Loaded LSTM Model!')
         except RuntimeError:
             st.text('Error while loading model')
+    elif model_choose == 'TCN':
+        try:
+            loaded_json = open(r'saved_models/TCN.json', "r").read()
+            model = model_from_json(loaded_json, custom_objects={'TCN': TCN})
+            model.load_weights(r'saved_models/TCN_weights.h5')
+            st.text('Loaded TCN Model!')
+        except RuntimeError:
+            st.text('Error while loading model')
+    summary = st.checkbox('Model summary')
+    if summary:
+        st.write('---TODO')
     st.text('Note: Models only work on sensor 1 at this moment.')
     time_to_estimate = st.slider("Time frame on which to estimate", min_value=data1.index.to_pydatetime()[0],
                                  max_value=data1.index.to_pydatetime()[-1],
