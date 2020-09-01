@@ -62,13 +62,16 @@ def plot_estimations(pred, real):
     return fig
 
 
-def scatter_plotting(column_x, column_y, x_label, y_label):
-    fig, ax = plt.subplots(figsize=(9, 5))
-    ax.scatter(x=column_x[::5], y=column_y[::5], alpha=0.7)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-    ax.grid()
-    return fig
+def scatter_plotting(column_x, column_y, x_label, y_label, distr=False):
+    if not distr:
+        fig, ax = plt.subplots(figsize=(9, 6))
+        ax.scatter(x=column_x[::5], y=column_y[::5], alpha=0.7)
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+        return fig
+    else:
+        plot = sns.jointplot(x=column_x[::5], y=column_y[::5], height=7, alpha=0.7)
+        return plot
 
 
 def residual_error_plot(pred, real):
@@ -91,6 +94,13 @@ def residual_error_plot(pred, real):
     axs[1].set_ylim(9, 31)
     axs[1].grid()
     axs[1].legend(loc='best', fontsize=17)
+    return fig
+
+
+def histogram_plot(csv, column):
+    fig, axs = plt.subplots(nrows=1, ncols=1, squeeze=True, figsize=(11, 7))
+    sns.distplot(csv[column], bins=15)
+    plt.grid()
     return fig
 
 
