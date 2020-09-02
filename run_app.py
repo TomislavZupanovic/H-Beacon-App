@@ -26,9 +26,11 @@ def main():
                           ' Choose the option from the left sidebar.')
     st.sidebar.title("Menu")
     app_mode = st.sidebar.selectbox("Choose the app mode",
-                                    ["Home", "Explore data", "Use the Model"])
+                                    ["Home", "Explore data", "Further Analysis", "Use the Model"])
     if app_mode == "Explore data":
         explore_data()
+    elif app_mode == 'Further Analysis':
+        further_analysis()
     elif app_mode == "Use the Model":
         use_model()
 
@@ -88,22 +90,34 @@ def explore_data():
     if histogram:
         col = st.selectbox('Select feature', time_frame_data.columns, format_func=col_names.get)
         st.pyplot(histogram_plot(time_frame_data, col))
-    st.subheader("Further soil humidity analysis")
-    show_analysis = st.button('Show')
-    if show_analysis:
-        step = st.number_input('Specify step   (Default value of 140 roughly represents 1 day)', 1, 1000, 140)
-        if sensor_plot == 'Sensor 1':
-            st.markdown('Sensor 1')
-            fig = time_series_analysis(data1, step)
-            st.pyplot(fig)
-        elif sensor_plot == 'Sensor 2':
-            st.markdown('Sensor 2')
-            fig = time_series_analysis(data2, step)
-            st.pyplot(fig)
-        elif sensor_plot == 'Sensor 3':
-            st.markdown('Sensor 3')
-            fig = time_series_analysis(data3, step)
-            st.pyplot(fig)
+
+
+def further_analysis():
+    st.header('Further Analysis')
+    data_load = st.text('Loading data...')
+    data1, data2, data3 = load_data()
+    data_load.text('Loading data...done!')
+    sensor = st.selectbox("Choose sensor", ['Sensor 1', 'Sensor 2', 'Sensor 3'])
+    column = st.radio('Features', list(data1.columns), format_func=col_names.get)
+    transformation = st.selectbox('Data transformation', ['Original', 'Logarithm', 'Squared', 'Square Root'])
+    if transformation == 'Logarithm' or 'Square Root':
+        st.text("Note: RSSI and SNR are transformed from dBm scale to absolute scale for \n"
+                "      Logarithm and Square Root transformation")
+    analysis_type = st.selectbox('Analysis type', ['Minus Average', 'Minus Weighted Average', 'Minus Shifted'])
+    roll_step = st.slider('Moving Average step (140 roughly represents 1 day)', min_value=1, max_value=300)
+    if sensor == 'Sensor 1':
+        sensor_data = data1
+    elif sensor == 'Sensor 2':
+        sensor_data = data2
+    elif sensor == 'Sensor 3':
+        sensor_data = data3
+    fig, transformed_data = time_series_analysis(sensor_data, column, transformation, analysis_type, roll_step)
+    st.pyplot(fig)
+    corr_check = st.checkbox('Cross-Correlation and Auto-Correlation')
+    if corr_check:
+        corr_column = st.radio('Features', list(data1.columns), format_func=col_names.get, key='autocorr')
+        max_lag = st.slider('Maximum lag', min_value=2000, max_value=10000)
+        st.pyplot(autocorr_plot(sensor_data, corr_column, max_lag))
 
 
 def use_model():
