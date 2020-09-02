@@ -3,6 +3,8 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 from .utilities import rol_mean, rol_std
+from statsmodels.graphics import tsaplots
+from statsmodels.tsa.stattools import ccf
 
 
 def hum_plot(csv):
@@ -29,7 +31,7 @@ def plotting(csv, column, sensor, roll=None):
     else:
         csv_column = csv[column]
     fig, axs = plt.subplots(nrows=2, ncols=1, squeeze=True, figsize=(16, 13))
-    axs[0].plot(csv.soil_humidity, color=color, label=f'{sensor} humidity')
+    axs[0].plot(csv.soil_humidity, color=color, label=f'{sensor} soil humidity')
     axs[0].legend(loc='best', fontsize=17)
     axs[0].grid()
     axs[0].tick_params(axis='both', which='major', labelsize=17)
@@ -104,36 +106,58 @@ def histogram_plot(csv, column):
     return fig
 
 
-def time_series_analysis(csv, roll_step=140):
+def autocorr_plot(csv, column, max_lag):
     data = csv.copy()
-    for var in ['69886_rssi','69886_snr']:
-        data[var] = data[var].map(lambda x: np.power(10, x/10))
-    fig, axs = plt.subplots(nrows=2, ncols=2, sharex=False, squeeze=True,
-                            figsize=(16, 12))
-    data_log = np.log(data)
-    rolmean_log = rol_mean(data_log, roll_step)
-    exp_weight_avg = data_log.ewm(halflife=roll_step, min_periods=0, adjust=True).mean()
-    data_log_exp_avg = data_log - exp_weight_avg
-    data_log_minus_avg = data_log - rolmean_log
-    data_log_shift = data_log - data_log.shift(roll_step)
-    for j, data_type in enumerate([data_log, data_log_minus_avg]):
-        axs[0, j].plot(data_type.soil_humidity, color='blue', label='Original', alpha=0.6)
-        axs[0, j].plot(rol_mean(data_type, roll_step).soil_humidity, color='red', label='Rolling Mean')
-        axs[0, j].plot(rol_std(data_type, roll_step).soil_humidity, color='black', label='Rolling Std')
-        axs[0, j].legend(loc='best')
-        if j == 0:
-            axs[0, j].set_title(f'Logartihm scale data\nRolling step: {roll_step}')
-        else:
-            axs[0, j].set_title(f'Log data minus average\nRolling step: {roll_step}')
-        axs[0, j].grid()
-    for i, data_type in enumerate([data_log_exp_avg, data_log_shift]):
-        axs[1, i].plot(data_type.soil_humidity, color='blue', label='Original', alpha=0.6)
-        axs[1, i].plot(rol_mean(data_type, roll_step).soil_humidity, color='red', label='Rolling Mean')
-        axs[1, i].plot(rol_std(data_type, roll_step).soil_humidity, color='black', label='Rolling Std')
-        axs[1, i].legend(loc='best')
-        if i == 0:
-            axs[1, i].set_title(f'Log data exp decay weighted average\nEWM step: {roll_step}')
-        else:
-            axs[1, i].set_title(f'Log data minus shifted log data\nShift step: {roll_step}')
-        axs[1, i].grid()
+    x = data[column].values
+    y = data.soil_humidity.values
+    cross_corr = ccf(y, x)
+    fig, axs = plt.subplots(nrows=2, ncols=1, squeeze=True, figsize=(14, 11))
+    axs[0].plot(cross_corr[:max_lag], linewidth=3)
+    axs[0].set_title(f'Cross-Correlation {column} with soil humidity', fontsize=17)
+    axs[0].grid()
+    tsaplots.plot_acf(x, ax=axs[1], lags=max_lag)
+    axs[1].set_title(f'Auto-Correlation of {column}', fontsize=17)
+    axs[1].set_xlabel('Lags', fontsize=17)
+    axs[1].grid()
     return fig
+
+
+def time_series_analysis(csv, column, transformation, analysis_type, roll_step):
+    data = csv.copy()
+    if transformation == 'Logarithm':
+        for var in ['69886_rssi', '69886_snr']:
+            data[var] = data[var].map(lambda x: np.power(10, x / 10))
+        data_transformed = np.log(data)
+    elif transformation == 'Squared':
+        data_transformed = np.square(data)
+    elif transformation == 'Square Root':
+        for var in ['69886_rssi', '69886_snr']:
+            data[var] = data[var].map(lambda x: np.power(10, x / 10))
+        data_transformed = np.sqrt(data)
+    elif transformation == 'Original':
+        data_transformed = data
+    if analysis_type == 'Minus Average':
+        data_mean = rol_mean(data_transformed, roll_step)
+        data_to_analize = data_transformed - data_mean
+    elif analysis_type == 'Minus Weighted Average':
+        exp_weight_avg = data_transformed.ewm(halflife=roll_step, min_periods=0, adjust=True).mean()
+        data_to_analize = data_transformed - exp_weight_avg
+    elif analysis_type == 'Minus Shifted':
+        data_to_analize = data_transformed - data_transformed.shift(roll_step)
+    fig, axs = plt.subplots(nrows=3, ncols=1, squeeze=True, figsize=(13, 20))
+    axs[0].plot(data_transformed[column], color='blue', label=f'{column}', alpha=0.5)
+    axs[0].plot(rol_mean(data_transformed, roll_step)[column], color='red', label='Rolling Mean')
+    axs[0].axhline(y=data_transformed[column].mean(), linestyle='--', color='black', linewidth=2, label='Mean')
+    axs[0].legend(loc='best')
+    axs[0].set_title(f'{transformation} data', fontsize=17)
+    axs[0].grid()
+    axs[1].plot(data_to_analize[column], color='blue', label=f'{column}', alpha=0.5)
+    axs[1].plot(rol_mean(data_to_analize, roll_step)[column], color='red', label='Rolling mean')
+    axs[1].plot(rol_std(data_to_analize, roll_step)[column], color='black', label='Rolling Std')
+    axs[1].legend(loc='best')
+    axs[1].set_title(f'{transformation} {analysis_type} data', fontsize=17)
+    axs[1].grid()
+    sns.distplot(data_transformed[column], bins=15, ax=axs[2])
+    axs[2].set_title(f'{transformation} data', fontsize=17)
+    return fig, data_transformed
+
