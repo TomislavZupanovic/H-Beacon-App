@@ -4,6 +4,7 @@ import streamlit as st
 from .process import time_parse
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
+
 data1_path = 'src/data/Data1.csv'
 data2_path = 'src/data/Data2.csv'
 data3_path = 'src/data/Data3.csv'
