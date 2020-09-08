@@ -1,14 +1,18 @@
-from tensorflow.keras import models
-from tensorflow.keras.models import model_from_json
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import streamlit as st
 from src.plotting import *
 from src.utilities import *
 from src.process import process_data_model, rolling_before_model
+from tensorflow.keras import models
+from tensorflow.keras.models import model_from_json
 from tcn import TCN
+from PIL import Image
 
 save_dir_nn = 'saved_models/NN_128_64.h5'
 save_dir_lstm = 'saved_models/LSTM_step6_1_12.h5'
 save_dir_tcn = 'saved_models/TCN.h5'
+
 
 col_names = {
     'pressure': 'Pressure',
@@ -22,8 +26,7 @@ col_names = {
 
 def main():
     st.title('H-Beacon: Smart Irrigation System')
-    start_text = st.write('Data visualization and Model demonstration tool.'
-                          ' Choose the option from the left sidebar.')
+    st.write('Data analysis, visualization and Model demonstration tool.')
     st.sidebar.title("Menu")
     app_mode = st.sidebar.selectbox("Choose the app mode",
                                     ["Home", "Explore data", "Further Analysis", "Use the Model"])
@@ -33,6 +36,12 @@ def main():
         further_analysis()
     elif app_mode == "Use the Model":
         use_model()
+    elif app_mode == 'Home':
+        image = Image.open('src/data/Horizon2020.png')
+        st.markdown('H-Beacon is the deep sequential neural network model that estimates soil humidity\n'
+                    'from the strength of the LoRa-beacon IoT signal. We are funded by Horizon 2020 EU\n'
+                    'funding for Research & Innovation.')
+        st.image(image, use_column_width=True)
 
 
 def explore_data():
@@ -146,9 +155,6 @@ def use_model():
             st.text('Loaded TCN Model!')
         except RuntimeError:
             st.text('Error while loading model')
-    summary = st.checkbox('Model summary')
-    if summary:
-        st.write('---TODO')
     st.text('Note: Models only work on sensor 1 at this moment.')
     time_to_estimate = st.slider("Time frame on which to estimate", min_value=data1.index.to_pydatetime()[0],
                                  max_value=data1.index.to_pydatetime()[-1],
