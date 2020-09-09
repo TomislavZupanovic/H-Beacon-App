@@ -39,9 +39,5 @@ def process_data_model(csv, csv_to_process, model_type):
 
 def rolling_before_model(csv):
     data = csv.copy()
-    data.air_humidity = data['air_humidity'].rolling(100, min_periods=1).mean()
-    data.air_temp = data['air_temp'].rolling(100, min_periods=1).mean()
-    data.pressure = data['pressure'].rolling(100, min_periods=1).mean()
-    data['69886_rssi'] = data['69886_rssi'].rolling(100, min_periods=1).mean()
-    data['69886_snr'] = data['69886_snr'].rolling(100, min_periods=1).mean()
+    data.iloc[:, :-1] = data.iloc[:, :-1].ewm(halflife=140, min_periods=0, adjust=True).mean()
     return data
