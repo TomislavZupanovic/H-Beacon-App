@@ -11,6 +11,13 @@ H-Beacon is the deep sequential neural network model that estimates soil humidit
 
 [contact @ waveform.hr](http://www.waveform.hr/#contact)
 
+## Installation and use
+```bash
+$ git clone https://github.com/TomislavZupanovic/H-Beacon-App.git
+```
+```bash
+$ streamlit run app.py
+```
 
 ## Examples
 - **Variables plot in respect to soil humidity**
