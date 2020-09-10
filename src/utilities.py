@@ -3,7 +3,7 @@ import pandas as pd
 import streamlit as st
 from .process import time_parse
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-
+import time
 
 data1_path = 'src/data/Data1.csv'
 data2_path = 'src/data/Data2.csv'
@@ -44,7 +44,10 @@ def rol_std(data, step):
 
 
 def estimate(model, x, y, scaler, model_type):
+    start_time = time.clock()
     pred = model.predict(x)
+    end_time = time.clock()
+    pred_time = end_time - start_time
     pred = pred.reshape(-1, 1)
     y = y.reshape(-1, 1)
     if model_type == 'LSTM' or model_type == 'TCN':
@@ -55,7 +58,7 @@ def estimate(model, x, y, scaler, model_type):
     real_values = scaler.inverse_transform(real)
     prediction = prediction[:, -1]
     real_values = real_values[:, -1]
-    return prediction, real_values
+    return prediction, real_values, pred_time
 
 
 def rmse(real, pred):
