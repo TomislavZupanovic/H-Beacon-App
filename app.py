@@ -164,10 +164,11 @@ def use_model():
     data_for_model = rolling_before_model(data1)
     data_to_estimate = data_for_model.loc[low.strftime('%Y-%m-%d'): high.strftime('%Y-%m-%d')]
     x, y, scaler = process_data_model(data_for_model, data_to_estimate, model_choose)
-    prediction, real_value = estimate(model, x, y, scaler, model_choose)
+    prediction, real_value, pred_time = estimate(model, x, y, scaler, model_choose)
     st.pyplot(plot_estimations(prediction, real_value))
     st.write('Metrics on selected time frame:')
-    st.text('RMSE: {:.3f}\nMAE: {:.3f}'.format(rmse(real_value, prediction), mae(real_value, prediction)))
+    st.text('Time: {:.2f}s\nRMSE: {:.3f}\nMAE: {:.3f}'.format(pred_time, rmse(real_value, prediction),
+                                                             mae(real_value, prediction)))
     st.pyplot(residual_error_plot(prediction, real_value))
 
 
