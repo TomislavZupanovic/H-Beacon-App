@@ -5,14 +5,10 @@ from src.plotting import *
 from src.utilities import *
 from src.process import process_data_model, rolling_before_model
 from tensorflow.keras import models
-from tensorflow.keras.models import model_from_json
-from tcn import TCN
 from PIL import Image
 
 save_dir_nn = 'saved_models/NN_128_64.h5'
 save_dir_lstm = 'saved_models/LSTM_step6_1_12.h5'
-save_dir_tcn = 'saved_models/TCN.h5'
-
 
 col_names = {
     'pressure': 'Pressure',
@@ -134,7 +130,7 @@ def use_model():
     data_load = st.text('Loading data...')
     data1, data2, data3 = load_data()
     data_load.text('Loading data...done!')
-    model_choose = st.selectbox("Choose trained Model", ['Neural Network', 'LSTM', 'TCN'])
+    model_choose = st.selectbox("Choose trained Model", ['Neural Network', 'LSTM'])
     if model_choose == 'Neural Network':
         try:
             model = models.load_model(save_dir_nn)
@@ -145,14 +141,6 @@ def use_model():
         try:
             model = models.load_model(save_dir_lstm)
             st.text('Loaded LSTM Model!')
-        except RuntimeError:
-            st.text('Error while loading model')
-    elif model_choose == 'TCN':
-        try:
-            loaded_json = open(r'saved_models/TCN.json', "r").read()
-            model = model_from_json(loaded_json, custom_objects={'TCN': TCN})
-            model.load_weights(r'saved_models/TCN_weights.h5')
-            st.text('Loaded TCN Model!')
         except RuntimeError:
             st.text('Error while loading model')
     st.text('Note: Models only work on sensor 1 at this moment.')
