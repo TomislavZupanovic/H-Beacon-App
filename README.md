@@ -1,5 +1,5 @@
 # H-Beacon-App
-Data analysis, visualization and Model demonstration interface using [Streamlit](https://www.streamlit.io/). It's a part of [H-Beacon: Smart Irrigation System](https://github.com/h-beacon/humidity-time-series) project. Enables easy and quick sensor data analysis, visualization and trained models inference for any newly acquired data without repeated coding.
+Data analysis, visualization and Model demonstration interface using [Streamlit](https://www.streamlit.io/). It's a part of [H-Beacon: Smart Irrigation System](https://github.com/h-beacon/humidity-time-series) project. Enables easy and quick sensor data analysis, visualization and trained models inference for any newly acquired data without repeated coding. Application is deployed on [Heroku](https://www.heroku.com/).
 
 H-Beacon is the deep sequential neural network model that estimates soil humidity from the strength of the LoRa-beacon IoT signal. We are funded by Horizon 2020 EU funding for Research & Innovation.
 
