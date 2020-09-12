@@ -110,14 +110,24 @@ def further_analysis():
                 "      Logarithm and Square Root transformation")
     analysis_type = st.selectbox('Analysis type', ['Minus Average', 'Minus Weighted Average', 'Minus Shifted'])
     roll_step = st.slider('Moving Average step (140 roughly represents 1 day)', min_value=1, max_value=300)
+    apply_button = st.button('Apply')
     if sensor == 'Sensor 1':
         sensor_data = data1
     elif sensor == 'Sensor 2':
         sensor_data = data2
     elif sensor == 'Sensor 3':
         sensor_data = data3
-    fig, transformed_data = time_series_analysis(sensor_data, column, transformation, analysis_type, roll_step)
-    st.pyplot(fig)
+    if apply_button:
+        fig, transformed_data, data_to_analize = time_series_analysis(sensor_data, column, transformation, analysis_type, roll_step)
+        st.pyplot(fig)
+        dftest = adfuller(data_to_analize[column], autolag='AIC')
+        st.subheader('Dicky-Fuller Test for stationarity:')
+        st.text('Test statistic:  {:.4f}'.format(dftest[0]))
+        st.text('p-value:  {:.5f}'.format(dftest[1]))
+        st.text('Number of lags used:  {:.0f}'.format(dftest[2]))
+        st.text('Critical value (1%):  {:.4f}'.format(dftest[4]["1%"]))
+        st.text('Critical value (5%):  {:.4f}'.format(dftest[4]["5%"]))
+        st.text('Critical value (10%): {:.4f}'.format(dftest[4]["10%"]))
     corr_check = st.checkbox('Cross-Correlation and Auto-Correlation')
     if corr_check:
         corr_column = st.radio('Features', list(data1.columns), format_func=col_names.get, key='autocorr')
@@ -148,16 +158,18 @@ def use_model():
                                  max_value=data1.index.to_pydatetime()[-1],
                                  value=(data1.index.to_pydatetime()[0], data1.index.to_pydatetime()[-1]),
                                  format='YY/MM/DD')
+    estimate_button = st.button('Predict')
     low, high = time_to_estimate
     data_for_model = rolling_before_model(data1)
     data_to_estimate = data_for_model.loc[low.strftime('%Y-%m-%d'): high.strftime('%Y-%m-%d')]
     x, y, scaler = process_data_model(data_for_model, data_to_estimate, model_choose)
-    prediction, real_value, pred_time = estimate(model, x, y, scaler, model_choose)
-    st.pyplot(plot_estimations(prediction, real_value))
-    st.write('Metrics on selected time frame:')
-    st.text('Time: {:.2f}s\nRMSE: {:.3f}\nMAE: {:.3f}'.format(pred_time, rmse(real_value, prediction),
+    if estimate_button:
+        prediction, real_value, pred_time = estimate(model, x, y, scaler, model_choose)
+        st.pyplot(plot_estimations(prediction, real_value))
+        st.write('Metrics on selected time frame:')
+        st.text('Time: {:.2f}s\nRMSE: {:.3f}\nMAE: {:.3f}'.format(pred_time, rmse(real_value, prediction),
                                                              mae(real_value, prediction)))
-    st.pyplot(residual_error_plot(prediction, real_value))
+        st.pyplot(residual_error_plot(prediction, real_value))
 
 
 if __name__ == "__main__":

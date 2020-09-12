@@ -1,10 +1,11 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
+import streamlit as st
 import pandas as pd
 import numpy as np
 from .utilities import rol_mean, rol_std
 from statsmodels.graphics import tsaplots
-from statsmodels.tsa.stattools import ccf
+from statsmodels.tsa.stattools import ccf, adfuller
 
 
 def hum_plot(csv):
@@ -159,5 +160,7 @@ def time_series_analysis(csv, column, transformation, analysis_type, roll_step):
     axs[1].grid()
     sns.distplot(data_transformed[column], bins=15, ax=axs[2])
     axs[2].set_title(f'{transformation} data', fontsize=17)
-    return fig, data_transformed
+    if data_to_analize.isnull().sum().any():
+        data_to_analize.dropna(axis=0, inplace=True)
+    return fig, data_transformed, data_to_analize
 
