@@ -6,5 +6,5 @@ email = \"tomislav35_@hotmail.com\"\n\
 echo "\
 [server]\n\
 headless = true\n\
-enableCORS=false\n\
+enableCORS = false\n\
 port = $PORT\n\
