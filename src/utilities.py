@@ -50,7 +50,7 @@ def estimate(model, x, y, scaler, model_type):
     pred_time = end_time - start_time
     pred = pred.reshape(-1, 1)
     y = y.reshape(-1, 1)
-    if model_type == 'LSTM' or model_type == 'TCN':
+    if model_type == 'LSTM':
         x = x[:, 0, :]
     pred = np.concatenate((x, pred), axis=1)
     real = np.concatenate((x, y), axis=1)

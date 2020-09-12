@@ -30,7 +30,7 @@ def process_data_model(csv, csv_to_process, model_type):
     scale_data = whole_data[:split]
     scaler.fit(scale_data)
     data = scaler.transform(data)
-    if model_type == 'LSTM' or model_type == 'TCN':
+    if model_type == 'LSTM':
         x_data, y_data = split_sequences(data, 6)
     elif model_type == 'Neural Network':
         x_data, y_data = data[:, :-1], data[:, -1]
