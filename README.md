@@ -15,7 +15,7 @@ H-Beacon is the deep sequential neural network model that estimates soil humidit
 
 [H-Beacon-App](https://h-beacon.herokuapp.com/)
 
-## Installation and running
+## Installation and running locally
 ```bash
 $ git clone https://github.com/TomislavZupanovic/H-Beacon-App.git
 ```
